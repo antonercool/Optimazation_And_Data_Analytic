@@ -12,6 +12,7 @@ class NearestClassCentroidMNIST:
     def __init__(self):
         pass  
 
+
     def train_nearest_class_centroid_model(self, traning_set):
         traning_data = [traning_set[i].raw_bytes for i in range(len(traning_set))]
         traning_labels = [traning_set[i].label for i in range(len(traning_set))] 
@@ -22,10 +23,12 @@ class NearestClassCentroidMNIST:
         # return the traied model
         return nearest_class_centroid_model
 
+
     def apply_testing_set(self, testing_set, trained_model):
         testing_data = [testing_set[i].raw_bytes for i in range(len(testing_set))]
         predicted_class = trained_model.predict(testing_data)
         return predicted_class
+
 
     def evaluate_nearest_class_centroid_results(self, testing_set, predicted_labels):
         testing_labels = [testing_set[i].label for i in range(len(testing_set))]
@@ -48,6 +51,7 @@ class NearestClassCentroidMNIST:
                 current_centroid = centroid
         return current_centroid       
 
+    
     def plot_scatter_test_and_centroids(self, test_images, ncc_object, predicted_labels):
         plt.figure(figsize=(9, 9))
         traning_images_bytes = [test_images[i].raw_bytes for i in range(len(test_images)) ]

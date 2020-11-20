@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random as random
 from ORL.ORLLoading import * 
+from NNC.Nearest_neighbor_classifier_MNIST import *
 
 class NearestNeighborClassifier:
     def __init__(self):
@@ -42,7 +43,6 @@ class NearestNeighborClassifier:
                 succes_rate +=1
         return succes_rate
     
-
     def plot_neighbor_classes_kmeans(self, kmeans_object, pca_values_image, predicted_data = []):
         plt.figure(figsize=(9, 9))
     
@@ -69,6 +69,38 @@ class NearestNeighborClassifier:
         l.set_zorder(50)  # put the legend on top
         #plt.show() 
 
+    def train_nearest_neighbor_k_neighbor(self, traning_set, k_neighbor):
+        traning_images_bytes = [traning_set[i].raw_bytes for i in range(len(traning_set))]
+        traning_images_labels = [traning_set[i].label for i in range(len(traning_set))]
+
+        pca_tranning = PCA(n_components=2)
+        pca_traning_values = pca_tranning.fit_transform(traning_images_bytes)
+
+        k_neighbor_classifier = neighbors.KNeighborsClassifier(k_neighbor, weights='distance')
+        k_neighbor_classifier.fit(pca_traning_values, traning_images_labels)
+
+        return k_neighbor_classifier
+
+
+    def predict_test_data_k_neighbor(self, trained_model, testing_set):
+        testing_images_bytes = [testing_set[i].raw_bytes for i in range(len(testing_set))]
+        #testing_images_labels = [traning_set[i].label for i in range(len(traning_set))]
+
+        pca_testing = PCA(n_components=2)
+        pca_testing_values = pca_testing.fit_transform(testing_images_bytes)
+
+        predicted_values = trained_model.predict(pca_testing_values)
+        return predicted_values
+
+
+    def evaluate_succes_rate_k_neighbor(self, predict_labels, testing_set):
+        testing_labels = [testing_set[i].label for i in range(len(testing_set))]
+        correct_predicted = 0
+        for i in range(len(predict_labels)):
+            if(predict_labels[i] == testing_labels[i]):
+                correct_predicted +=1
+    
+        return correct_predicted
 
 if __name__ == '__main__':
     orl_image_loader = OrlDataLoader()
@@ -84,5 +116,16 @@ if __name__ == '__main__':
     predicted_labels = nearest_neighbor_classifier.predict_neighbor_class(kmeans_object, testing_set_NNC)
     
     succes_rate = nearest_neighbor_classifier.calculate_succes_rate(predicted_labels, traning_set_NNC, testing_set_NNC)
-    print(f"succes_rate = {succes_rate}/{120} = {succes_rate/120}")
-    plt.show()
+    print(f"succes_rate k_means, k = max = {succes_rate}/{120} = {succes_rate/120}")
+
+    nearest_neighbor_classifier_MNIST = NearestNeighborClassifierMNISK()
+
+    trained_model  = nearest_neighbor_classifier_MNIST.train_nearest_neighbor_k_neighbor(traning_set_NNC, 1)
+    predict_labels = nearest_neighbor_classifier_MNIST.predict_test_data_k_neighbor(trained_model, testing_set_NNC)
+    print(predict_labels)
+    succes_rate_k_1 = nearest_neighbor_classifier_MNIST.evaluate_succes_rate_k_neighbor(predict_labels, testing_set_NNC)
+
+    print(f"succes rate k=1 : {succes_rate_k_1}/{len(testing_set_NNC)} = {succes_rate_k_1/len(testing_set_NNC)} = {succes_rate_k_1/len(testing_set_NNC) *100}")
+
+
+    #plt.show()

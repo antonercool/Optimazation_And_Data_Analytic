@@ -49,11 +49,11 @@ class MNISTDataLoader:
         return images_object_list
     
 
-    def fecth_testing_set_of_sub_class(self, sub_class):
+    def fecth_testing_set_of_class(self, label_number):
         testing_set = self.fetch_testing_set() 
-        return [testing_set[i] for i in range(len(testing_set)) if testing_set[i] == sub_class]
+        return [testing_set[i] for i in range(len(testing_set)) if testing_set[i].label == label_number]
 
 
-    def fecth_traning_set_of_sub_class(self, sub_class):
+    def fecth_traning_set_of_class(self, label_number):
         testing_set = self.fetch_traning_set() 
-        return [testing_set[i] for i in range(len(testing_set)) if testing_set[i] == sub_class]    
+        return [testing_set[i] for i in range(len(testing_set)) if testing_set[i].label == label_number]    

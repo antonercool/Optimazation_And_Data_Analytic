@@ -4,3 +4,4 @@
 - pip install sklearn
 - pip install matplotlib
 - pip install numpy
+- pip install python-mnist
