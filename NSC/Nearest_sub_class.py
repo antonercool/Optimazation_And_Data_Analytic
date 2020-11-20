@@ -24,7 +24,18 @@ class NearestSubClassClassifier:
         kmeans.fit(pca_values_image)
         return (kmeans, pca_values_image, k_cluster_size)
 
-    def plot_sub_classes_kmeans(self, kmeans_object, pca_values_image, label, cluster_size):
+
+    def predict_sub_class(self, kmeans_object, testing_set):
+        testing_bytes = [testing_set[i].raw_bytes for i in range(len(testing_set))]
+        pca_images = PCA(n_components=2)
+        pca_testing_image = pca_images.fit_transform(testing_bytes)
+        predicted_labels = kmeans_object.predict(pca_testing_image)
+
+        print(f"Predicted data for label {testing_set[0].label} : {predicted_labels}");
+
+        return pca_testing_image
+
+    def plot_sub_classes_kmeans(self, kmeans_object, pca_values_image, label, cluster_size, predicted_data = []):
         plt.figure(figsize=(9, 9))
     
         pca_values_list = []
@@ -40,13 +51,20 @@ class NearestSubClassClassifier:
             current_pca_X_vals_class = [pca_values_list[cluster_class_index][i][0] for i in range(len(pca_values_list[cluster_class_index]))]
             current_pca_Y_vals_class = [pca_values_list[cluster_class_index][i][1] for i in range(len(pca_values_list[cluster_class_index]))]
             plt.scatter(kmeans_object.cluster_centers_[cluster_class_index][0],kmeans_object.cluster_centers_[cluster_class_index][1], s=300, c='yellow', alpha=0.7)
-     
+
             number_of_colors = 40
             color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
             plt.scatter(current_pca_X_vals_class , current_pca_Y_vals_class, s=150, c=color[cluster_class_index],  label=f"class-{cluster_class_index}", zorder=10, alpha=0.7 )
             plt.annotate(f"Centroid-class-{cluster_class_index}", (kmeans_object.cluster_centers_[cluster_class_index][0]+0.1, kmeans_object.cluster_centers_[cluster_class_index][1]))
-                
-        plt.title(f"K-means, k={cluster_size} - sub classes for class : {label}")
+
+        if  len(predicted_data) != 0:
+            predicted_data_X_values = [predicted_data[i][0] for i in range(len(predicted_data))]
+            predicted_data_Y_values = [predicted_data[i][1] for i in range(len(predicted_data))]
+            plt.scatter(predicted_data_X_values , predicted_data_Y_values, s=200, marker="p", c="black",  label=f"predicted_test_data", zorder=10, alpha=0.7 )
+            plt.title(f"K-means, k={cluster_size} - sub classes for class : {label} - predicted data")
+        else:
+            plt.title(f"K-means, k={cluster_size} - sub classes for class : {label}")
+
         l = plt.legend()
         l.set_zorder(50)  # put the legend on top
         #plt.show() 
@@ -68,7 +86,31 @@ class NearestSubClassClassifier:
         l.set_zorder(50)  # put the legend on top
         #plt.show() 
 
-        
+    # https://medium.com/analytics-vidhya/how-to-determine-the-optimal-k-for-k-means-708505d204eb
+    # teqniuque for finding optimal K-value
+    def calculate_WSS(self, images, kmax):
+        images_bytes = [images[i].raw_bytes for i in range(len(images))]
+        pca_images = PCA(n_components=2)
+        points = pca_images.fit_transform(images_bytes)
+        sse = []
+        for k in range(1, kmax+1):
+            kmeans = KMeans(n_clusters = k).fit(points)
+            centroids = kmeans.cluster_centers_
+            pred_clusters = kmeans.predict(points)
+            curr_sse = 0
+
+            # calculate square of Euclidean distance of each point from its cluster center and add to current WSS
+            for i in range(len(points)):
+                curr_center = centroids[pred_clusters[i]]
+                curr_sse += (points[i, 0] - curr_center[0]) ** 2 + (points[i, 1] - curr_center[1]) ** 2
+
+            sse.append(curr_sse)
+        return sse
+    
+    def plot_WSS(self, wss_values, label):
+        plt.figure(figsize=(9, 9))
+        plt.plot(range(len(wss_values)), wss_values)
+        plt.title(f"wss for class : {label}")
 
 if __name__ == '__main__': 
     orl_image_loader = OrlDataLoader()
@@ -78,22 +120,67 @@ if __name__ == '__main__':
     images_class_3 = orl_image_loader.fetch_NSC_traning_set(3)
     images_class_5 = orl_image_loader.fetch_NSC_traning_set(5)
 
+    image_class_2_test = orl_image_loader.fetch_NSC_testing_set(2)
+    image_class_3_test = orl_image_loader.fetch_NSC_testing_set(3)
+    image_class_5_test = orl_image_loader.fetch_NSC_testing_set(5)
 
     nearest_sub_class_classifier = NearestSubClassClassifier()
 
-    nearest_sub_class_classifier.plot_values_clean(images_class_2)
-    kmeans_algoritm_results_2 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 3)
-    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2[0], kmeans_algoritm_results_2[1], images_class_2[0].label, kmeans_algoritm_results_2[2])    
+    wss_1 = nearest_sub_class_classifier.calculate_WSS(images_class_2, len(images_class_2))
+    nearest_sub_class_classifier.plot_WSS(wss_1,2)
+
+    wss_2 = nearest_sub_class_classifier.calculate_WSS(images_class_3, len(images_class_3))
+    nearest_sub_class_classifier.plot_WSS(wss_2,3)
     
-    nearest_sub_class_classifier.plot_values_clean(images_class_3)
-    kmeans_algoritm_results_3 = nearest_sub_class_classifier.find_sub_classes(images_class_3, 3)
-    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3[0] , kmeans_algoritm_results_3[1], images_class_3[0].label, kmeans_algoritm_results_3[2])    
+    wss_3 = nearest_sub_class_classifier.calculate_WSS(images_class_5, len(images_class_5))
+    nearest_sub_class_classifier.plot_WSS(wss_3,5)
+
+    #nearest_sub_class_classifier.plot_values_clean(images_class_2)
+    kmeans_algoritm_results_2 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 2)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2[0],
+                                                         kmeans_algoritm_results_2[1],
+                                                         images_class_2[0].label,
+                                                         kmeans_algoritm_results_2[2])    
     
-    nearest_sub_class_classifier.plot_values_clean(images_class_5)
-    kmeans_algoritm_results_5 = nearest_sub_class_classifier.find_sub_classes(images_class_5, 3)
-    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5[0] , kmeans_algoritm_results_5[1], images_class_5[0].label, kmeans_algoritm_results_5[2])    
+    #nearest_sub_class_classifier.plot_values_clean(images_class_3)
+    kmeans_algoritm_results_3 = nearest_sub_class_classifier.find_sub_classes(images_class_3, 2)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3[0],
+                                                         kmeans_algoritm_results_3[1],
+                                                         images_class_3[0].label,
+                                                         kmeans_algoritm_results_3[2])    
+    
+    #nearest_sub_class_classifier.plot_values_clean(images_class_5)
+    kmeans_algoritm_results_5 = nearest_sub_class_classifier.find_sub_classes(images_class_5, 2)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5[0],
+                                                         kmeans_algoritm_results_5[1],
+                                                         images_class_5[0].label,
+                                                         kmeans_algoritm_results_5[2])    
+    #plt.show()
+
+
+    testing_pca_2 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_2[0], image_class_2_test)
+    testing_pca_3 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_3[0], image_class_3_test)
+    testing_pca_5 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_5[0], image_class_5_test)
+
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2[0],
+                                                         kmeans_algoritm_results_2[1],
+                                                         images_class_2[0].label,
+                                                         kmeans_algoritm_results_2[2],
+                                                         testing_pca_2 )   
+
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3[0],
+                                                         kmeans_algoritm_results_3[1],
+                                                         images_class_3[0].label,
+                                                         kmeans_algoritm_results_3[2],
+                                                         testing_pca_3)
+
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5[0],
+                                                         kmeans_algoritm_results_5[1],
+                                                         images_class_5[0].label,
+                                                         kmeans_algoritm_results_5[2],
+                                                         testing_pca_5)     
     plt.show()
 
-
-
+                                                            
+    
     

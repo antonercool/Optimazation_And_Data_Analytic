@@ -105,5 +105,19 @@ class OrlDataLoader:
 
     def fetch_NSC_traning_set(self, label):
         traning_set_NCC = self.fetch_NCC_traning_set()
-        traning_set_NSC_sub = [traning_set_NCC[i] for i in range(len(self.fetch_NCC_traning_set())) if traning_set_NCC[i].label == str(label)]
+        traning_set_NSC_sub = [traning_set_NCC[i] for i in range(len(traning_set_NCC)) if traning_set_NCC[i].label == str(label)]
         return traning_set_NSC_sub 
+
+    
+    def fetch_NSC_testing_set(self, label):
+        testing_set_NCC = self.fetch_NCC_testing_set()
+        testing_set_NSC_sub = [testing_set_NCC[i] for i in range(len(testing_set_NCC)) if testing_set_NCC[i].label == str(label)]
+        return testing_set_NSC_sub
+    
+
+    def fetch_NNC_traning_set(self):
+        return self.fetch_NCC_traning_set()
+
+
+    def fetch_NNC_testing_set(self):
+        return self.fetch_NCC_testing_set()    
