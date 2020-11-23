@@ -1,6 +1,7 @@
 # Optimazation_And_Data_Analytic
 
-##h Prereqs for running the different machine learing aspects ##
+## Prereqs for running the different machine learing aspects ##
+
 `
 pip install sklearn
 pip install matplotlib
