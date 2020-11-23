@@ -3,9 +3,9 @@
 ## Prereqs for running the different machine learing aspects ##
 
 `
-pip install sklearn <br/>
-pip install matplotlib <br/>
-pip install numpy <br/>
-pip install python-mnist <br/>
-pip install Pillow <br/>
+pip install sklearn &nbsp;
+pip install matplotlib &nbsp;
+pip install numpy &nbsp;
+pip install python-mnist &nbsp;
+pip install Pillow &nbsp;
 `
