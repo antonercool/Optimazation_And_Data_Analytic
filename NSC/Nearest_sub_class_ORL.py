@@ -12,19 +12,19 @@ class NearestSubClassClassifier:
     def __init__(self):
         pass
 
+    # Uses KMeans to distrubute the training images into sub classes for size k
     def find_sub_classes(self, images, k_cluster_size):
         images_bytes = [images[i].raw_bytes for i in range(len(images))]
+        
+        # Use PCA to transform each image into 2-d
         pca_images = PCA(n_components=2)
         pca_values_image = pca_images.fit_transform(images_bytes)
 
         kmeans = KMeans(n_clusters=k_cluster_size, random_state=0)
-        # image1,image2,image3, image4 ,image5 ,image6 ,image7 --> lies within class 2 (label 2)
-        # [ 1      0      1       0        1         0    1]
-        # some test image class 2   ---> Predict  == some SUB-class
         kmeans.fit(pca_values_image)
         return (kmeans, pca_values_image, k_cluster_size)
 
-
+    # Predict testing images of class k, into sub classes m
     def predict_sub_class(self, kmeans_object, testing_set):
         testing_bytes = [testing_set[i].raw_bytes for i in range(len(testing_set))]
         pca_images = PCA(n_components=2)
@@ -35,6 +35,7 @@ class NearestSubClassClassifier:
 
         return pca_testing_image
 
+    # Plot the sub classes from KMeans
     def plot_sub_classes_kmeans(self, kmeans_object, pca_values_image, label, cluster_size, predicted_data = []):
         plt.figure(figsize=(9, 9))
     
@@ -69,6 +70,7 @@ class NearestSubClassClassifier:
         l.set_zorder(50)  # put the legend on top
         #plt.show() 
 
+    # Clean plot of data
     def plot_values_clean(self, images):
         plt.figure(figsize=(9, 9))
         images_bytes = [images[i].raw_bytes for i in range(len(images))]
@@ -86,7 +88,7 @@ class NearestSubClassClassifier:
         l.set_zorder(50)  # put the legend on top
         #plt.show() 
 
-    # https://medium.com/analytics-vidhya/how-to-determine-the-optimal-k-for-k-means-708505d204eb
+    # Taken from : https://medium.com/analytics-vidhya/how-to-determine-the-optimal-k-for-k-means-708505d204eb
     # teqniuque for finding optimal K-value
     def calculate_WSS(self, images, kmax):
         images_bytes = [images[i].raw_bytes for i in range(len(images))]
@@ -107,25 +109,31 @@ class NearestSubClassClassifier:
             sse.append(curr_sse)
         return sse
     
+    # Plot the Elbow Graph
     def plot_WSS(self, wss_values, label):
         plt.figure(figsize=(9, 9))
         plt.plot(range(len(wss_values)), wss_values)
         plt.title(f"wss for class : {label}")
 
+
 if __name__ == '__main__': 
     orl_image_loader = OrlDataLoader()
     image_viewer = ImageViewer()
 
+    #Fetch training classes {2,3,5}
     images_class_2 = orl_image_loader.fetch_NSC_traning_set(2)
     images_class_3 = orl_image_loader.fetch_NSC_traning_set(3)
     images_class_5 = orl_image_loader.fetch_NSC_traning_set(5)
 
+    #fetch testing classes {2,3,5}
     image_class_2_test = orl_image_loader.fetch_NSC_testing_set(2)
     image_class_3_test = orl_image_loader.fetch_NSC_testing_set(3)
     image_class_5_test = orl_image_loader.fetch_NSC_testing_set(5)
 
+    # Init Model
     nearest_sub_class_classifier = NearestSubClassClassifier()
 
+    # Calculate and plot WSS for class {2,3,5}
     wss_1 = nearest_sub_class_classifier.calculate_WSS(images_class_2, len(images_class_2))
     nearest_sub_class_classifier.plot_WSS(wss_1,2)
 
@@ -135,6 +143,7 @@ if __name__ == '__main__':
     wss_3 = nearest_sub_class_classifier.calculate_WSS(images_class_5, len(images_class_5))
     nearest_sub_class_classifier.plot_WSS(wss_3,5)
 
+    # train the model for class k = 2 with m sub classes = 2
     #nearest_sub_class_classifier.plot_values_clean(images_class_2)
     kmeans_algoritm_results_2 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 2)
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2[0],
@@ -142,6 +151,7 @@ if __name__ == '__main__':
                                                          images_class_2[0].label,
                                                          kmeans_algoritm_results_2[2])    
     
+    # train the model for class k = 3 with m sub classes = 2
     #nearest_sub_class_classifier.plot_values_clean(images_class_3)
     kmeans_algoritm_results_3 = nearest_sub_class_classifier.find_sub_classes(images_class_3, 2)
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3[0],
@@ -149,31 +159,34 @@ if __name__ == '__main__':
                                                          images_class_3[0].label,
                                                          kmeans_algoritm_results_3[2])    
     
+    # train the model for class k = 5 with m sub classes = 2
     #nearest_sub_class_classifier.plot_values_clean(images_class_5)
     kmeans_algoritm_results_5 = nearest_sub_class_classifier.find_sub_classes(images_class_5, 2)
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5[0],
                                                          kmeans_algoritm_results_5[1],
                                                          images_class_5[0].label,
                                                          kmeans_algoritm_results_5[2])    
-    #plt.show()
 
-
+    # Predict sub clases for class {2,3,5}
     testing_pca_2 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_2[0], image_class_2_test)
     testing_pca_3 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_3[0], image_class_3_test)
     testing_pca_5 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_5[0], image_class_5_test)
 
+    #Plot sub classes for testing class 2
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2[0],
                                                          kmeans_algoritm_results_2[1],
                                                          images_class_2[0].label,
                                                          kmeans_algoritm_results_2[2],
                                                          testing_pca_2 )   
 
+    #Plot sub classes for testing class 3
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3[0],
                                                          kmeans_algoritm_results_3[1],
                                                          images_class_3[0].label,
                                                          kmeans_algoritm_results_3[2],
                                                          testing_pca_3)
 
+    #Plot sub classes for testing class 5
     nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5[0],
                                                          kmeans_algoritm_results_5[1],
                                                          images_class_5[0].label,

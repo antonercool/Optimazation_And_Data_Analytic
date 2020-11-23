@@ -34,7 +34,7 @@ class NearestSubClassClassifierMNIST:
 
         return predicted_labels
 
-    def plot_prediction_data(self, k_kmeans_results, testing_set, predicted_labels):
+    def plot_prediction_data(self, k_kmeans_results, testing_set, predicted_labels, color):
         testing_bytes = [testing_set[i].raw_bytes for i in range(len(testing_set))]
         pca_images = PCA(n_components=2)
         pca_testing_image = pca_images.fit_transform(testing_bytes)
@@ -50,9 +50,6 @@ class NearestSubClassClassifierMNIST:
             pca_values_list.append(temp_pca_value)        
 
         for cluster_class_index in range(cluster_size):
-            number_of_colors = 40
-            color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
-
             current_pca_X_vals_class = [pca_values_list[cluster_class_index][i][0] for i in range(len(pca_values_list[cluster_class_index]))]
             current_pca_Y_vals_class = [pca_values_list[cluster_class_index][i][1] for i in range(len(pca_values_list[cluster_class_index]))]
            
@@ -67,7 +64,7 @@ class NearestSubClassClassifierMNIST:
         l.set_zorder(50)  # put the legend on top
 
 
-    def plot_sub_classes_kmeans(self, k_kmeans_results, label):
+    def plot_sub_classes_kmeans(self, k_kmeans_results, label, color):
         kmeans_object, pca_values_image, cluster_size = k_kmeans_results
         plt.figure(figsize=(9, 9))
     
@@ -81,8 +78,6 @@ class NearestSubClassClassifierMNIST:
             pca_values_list.append(temp_pca_value)        
 
         for cluster_class_index in range(cluster_size):
-            number_of_colors = 40
-            color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
 
             current_pca_X_vals_class = [pca_values_list[cluster_class_index][i][0] for i in range(len(pca_values_list[cluster_class_index]))]
             current_pca_Y_vals_class = [pca_values_list[cluster_class_index][i][1] for i in range(len(pca_values_list[cluster_class_index]))]
@@ -93,7 +88,7 @@ class NearestSubClassClassifierMNIST:
             plt.scatter(kmeans_object.cluster_centers_[cluster_class_index][0],kmeans_object.cluster_centers_[cluster_class_index][1], s=220 , marker="D", c='black')
             plt.scatter(kmeans_object.cluster_centers_[cluster_class_index][0],kmeans_object.cluster_centers_[cluster_class_index][1], s=150 , marker="D", c=color[cluster_class_index])
 
-        plt.title("")
+        plt.title(f"Sub classes distribution for class = {label}, k-means = 4")
         l = plt.legend()
         l.set_zorder(50)  # put the legend on top
 
@@ -141,45 +136,83 @@ class NearestSubClassClassifierMNIST:
         plt.title(f"wss for class : {label}")
 
 
+    def calculate_metrics(self, predicted_labels, label):
+        count_sub_class_0 = 0
+        count_sub_class_1 = 0
+        count_sub_class_2 = 0
+        count_sub_class_3 = 0
+        print(len(predicted_labels))
+        for _, value in enumerate(predicted_labels):
+            if value == 0:
+                count_sub_class_0 +=1
+            elif value == 1:
+                count_sub_class_1 +=1
+            elif value == 2:
+                count_sub_class_2 +=1
+            elif value == 3:
+                count_sub_class_3 +=1
+        print(f"printing metrics for class {label}")
+        print(f"Probality of subclass - 0 {count_sub_class_0}/{len(predicted_labels)} = {count_sub_class_0/len(predicted_labels)}" )            
+        print(f"Probality of subclass - 1 {count_sub_class_1}/{len(predicted_labels)} = {count_sub_class_1/len(predicted_labels)}" )            
+        print(f"Probality of subclass - 2 {count_sub_class_2}/{len(predicted_labels)} = {count_sub_class_2/len(predicted_labels)}" )            
+        print(f"Probality of subclass - 3 {count_sub_class_3}/{len(predicted_labels)} = {count_sub_class_3/len(predicted_labels)}" )            
+
+
+## Takes about 30 seconds to run
 if __name__ == '__main__': 
     MNISK_image_loader = MNISTDataLoader()
 
+     #Fetch training classes {2,3,5}
     images_class_2 = MNISK_image_loader.fecth_traning_set_of_class(2)
     images_class_3 = MNISK_image_loader.fecth_traning_set_of_class(3)
     images_class_5 = MNISK_image_loader.fecth_traning_set_of_class(5)
 
+    #fetch testing classes {2,3,5}
     image_class_2_test = MNISK_image_loader.fecth_testing_set_of_class(2)
     image_class_3_test = MNISK_image_loader.fecth_testing_set_of_class(3)
     image_class_5_test = MNISK_image_loader.fecth_testing_set_of_class(5)
 
+    # Init Model
     nearest_sub_class_classifier = NearestSubClassClassifierMNIST()
 
+    # Calculate and plot WSS for class {2,3,5}
     wss_1 = nearest_sub_class_classifier.calculate_WSS(images_class_2, 20 )
     nearest_sub_class_classifier.plot_WSS(wss_1,2)
-    #
-    #wss_2 = nearest_sub_class_classifier.calculate_WSS(images_class_3, 20)
-    #nearest_sub_class_classifier.plot_WSS(wss_2,3)
-    #
-    #wss_3 = nearest_sub_class_classifier.calculate_WSS(images_class_5, 20)
-    #nearest_sub_class_classifier.plot_WSS(wss_3,5)
+    
+    wss_2 = nearest_sub_class_classifier.calculate_WSS(images_class_3, 20)
+    nearest_sub_class_classifier.plot_WSS(wss_2,3)
+    
+    wss_3 = nearest_sub_class_classifier.calculate_WSS(images_class_5, 20)
+    nearest_sub_class_classifier.plot_WSS(wss_3,5)
 
-    ### Ploting different sizes of K from 2-5     --> 4 seems to be sweet point
-    ##kmeans_algoritm_results_2_2 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 2)
-    ##nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2_2, images_class_2[0].label)
-    ##
-    ##kmeans_algoritm_results_2_3 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 3)
-    ##nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2_3, images_class_2[0].label)                                                            
-    ##
-    ##kmeans_algoritm_results_2_4 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 4)
-    ##nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2_4, images_class_2[0].label)
-    ##
-    ##kmeans_algoritm_results_2_5 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 5)
-    ##nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2_5, images_class_2[0].label)
+    # Ploting different sizes of K from 2-5     --> 4 seems to be sweet point
+    number_of_colors = 40
+    color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
 
-
+    # train the model for class k = 2 with m sub classes = 4 and plot
     kmeans_algoritm_results_2_4 = nearest_sub_class_classifier.find_sub_classes(images_class_2, 4)
-    prediction_labels = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_2_4[0], image_class_2_test)
-    nearest_sub_class_classifier.plot_prediction_data(kmeans_algoritm_results_2_4, image_class_2_test, prediction_labels)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_2_4, images_class_2[0].label, color)
+    
+    # train the model for class k = 3 with m sub classes = 4 and plot
+    kmeans_algoritm_results_3_4 = nearest_sub_class_classifier.find_sub_classes(images_class_3, 4)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_3_4, images_class_3[0].label, color)                                                            
+    
+    # train the model for class k = 5 with m sub classes = 4 and plot
+    kmeans_algoritm_results_5_4 = nearest_sub_class_classifier.find_sub_classes(images_class_5, 4)
+    nearest_sub_class_classifier.plot_sub_classes_kmeans(kmeans_algoritm_results_5_4, images_class_5[0].label, color)
+    
+    # Predict subclasses for k = {2,3,5} and plot the results
+    kmeans_algoritm_results_5_4 = nearest_sub_class_classifier.find_sub_classes(images_class_5, 4)
+    prediction_labels5 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_5_4[0], image_class_5_test)
+    prediction_labels2 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_2_4[0], image_class_2_test)
+    prediction_labels3 = nearest_sub_class_classifier.predict_sub_class(kmeans_algoritm_results_3_4[0], image_class_3_test)
+    nearest_sub_class_classifier.plot_prediction_data(kmeans_algoritm_results_5_4, image_class_5_test, prediction_labels5, color)
+
+    #Calculate the metrics
+    nearest_sub_class_classifier.calculate_metrics(prediction_labels2, 2)
+    nearest_sub_class_classifier.calculate_metrics(prediction_labels3, 3)
+    nearest_sub_class_classifier.calculate_metrics(prediction_labels5, 5)
+
 
     plt.show()
 
